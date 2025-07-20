@@ -5,7 +5,6 @@ const cors = require('cors')
 const helmet = require('helmet')
 const compression = require('compression')
 const morgan = require('morgan')
-const path = require('path')
 const { healthCheck, getStats } = require('./database')
 const authRoutes = require('./routes/auth')
 const apiRoutes = require('./routes/api')
@@ -50,10 +49,24 @@ if (process.env.NODE_ENV === 'production') {
 app.use(compression())
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'))
 
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production'
-    ? process.env.CLIENT_URL
-    : ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      process.env.CLIENT_URL,
+      'http://localhost:3000',
+      'http://127.0.0.1:3000'
+    ].filter(Boolean)
+    
+
+    if (!origin) return callback(null, true)
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -107,12 +120,7 @@ app.use('/api', apiLimiter, auth, apiRoutes)
 
 app.use('/api/admin/*', adminAuth)
 
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../client/build')))
-  app.get('*', (_req, res) => {
-    res.sendFile(path.join(__dirname, '../client/build', 'index.html'))
-  })
-}
+
 
 app.use(notFound)
 app.use(errorHandler)
