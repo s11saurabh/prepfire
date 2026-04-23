@@ -153,7 +153,7 @@ const Footer = () => {
             </div>
             
             <div className="text-sm text-gray-400">
-              © 2024 PrepFire. All rights reserved.
+              © Saurabh Singhania - All rights reserved.
             </div>
           </div>
         </div>
